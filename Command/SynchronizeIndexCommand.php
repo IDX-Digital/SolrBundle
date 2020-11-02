@@ -6,7 +6,7 @@ use Doctrine\Common\Persistence\ObjectManager;
 use Doctrine\ODM\MongoDB\DocumentRepository;
 use Doctrine\ORM\EntityRepository;
 use FS\SolrBundle\Doctrine\Mapper\SolrMappingException;
-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -16,7 +16,7 @@ use Symfony\Component\Console\Question\ConfirmationQuestion;
 /**
  * Command synchronizes the DB with solr
  */
-class SynchronizeIndexCommand extends ContainerAwareCommand
+class SynchronizeIndexCommand extends Command
 {
     /**
      * {@inheritdoc}
