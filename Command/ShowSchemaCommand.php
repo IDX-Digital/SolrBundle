@@ -4,12 +4,12 @@ namespace FS\SolrBundle\Command;
 
 use FS\SolrBundle\Doctrine\Mapper\MetaInformationInterface;
 use FS\SolrBundle\Doctrine\Mapper\SolrMappingException;
-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class ShowSchemaCommand extends ContainerAwareCommand
+class ShowSchemaCommand extends Command
 {
     /**
      * {@inheritdoc}
