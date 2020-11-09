@@ -2,9 +2,8 @@
 
 namespace FS\SolrBundle\Doctrine\Hydration;
 
-use Doctrine\Common\Persistence\ManagerRegistry;
+use Doctrine\Persistence\ManagerRegistry;
 use FS\SolrBundle\Doctrine\Mapper\MetaInformationInterface;
-use Symfony\Bridge\Doctrine\RegistryInterface;
 
 /**
  * A doctrine-hydrator finds the entity for a given solr-document. This entity is updated with the solr-document values.

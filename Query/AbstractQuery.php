@@ -5,7 +5,7 @@ use FS\SolrBundle\Doctrine\Mapper\MetaInformationInterface;
 use FS\SolrBundle\Solr;
 use FS\SolrBundle\SolrInterface;
 use Solarium\QueryType\Select\Query\Query as SolariumQuery;
-use Solarium\QueryType\Update\Query\Document\Document;
+use Solarium\QueryType\Update\Query\Document;
 
 abstract class AbstractQuery extends SolariumQuery
 {

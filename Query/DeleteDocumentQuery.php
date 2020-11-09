@@ -24,7 +24,7 @@ class DeleteDocumentQuery extends AbstractQuery
      *
      * @throws QueryException when id or document_name is null
      */
-    public function getQuery()
+    public function getQuery(): ? string
     {
         $idField = $this->documentKey;
 

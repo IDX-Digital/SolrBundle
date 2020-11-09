@@ -29,7 +29,7 @@ class FindByDocumentNameQuery extends AbstractQuery
      *
      * @throws QueryException if documentName is null
      */
-    public function getQuery()
+    public function getQuery(): ?string
     {
         $documentName = $this->documentName;
 

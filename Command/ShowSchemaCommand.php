@@ -2,6 +2,7 @@
 
 namespace FS\SolrBundle\Command;
 
+use Doctrine\Persistence\ObjectManager;
 use FS\SolrBundle\Doctrine\Mapper\MetaInformationInterface;
 use FS\SolrBundle\Doctrine\Mapper\SolrMappingException;
 use Symfony\Component\Console\Command\Command;
@@ -12,6 +13,15 @@ use Symfony\Component\Console\Output\OutputInterface;
 class ShowSchemaCommand extends Command
 {
     /**
+     * @var \FS\SolrBundle\Doctrine\ClassnameResolver\KnownNamespaceAliases
+     */
+    protected $knownNamespaceAliases;
+    /**
+     * @var \FS\SolrBundle\Doctrine\Mapper\MetaInformationFactory
+     */
+    protected $informationFactory;
+
+    /**
      * {@inheritdoc}
      */
     protected function configure()
@@ -20,13 +30,25 @@ class ShowSchemaCommand extends Command
             ->setDescription('Show configured entities and their fields');
     }
 
+    public function __construct(
+        ObjectManager $objectManager,
+        \FS\SolrBundle\Doctrine\ClassnameResolver\KnownNamespaceAliases $knownNamespaceAliases,
+        \FS\SolrBundle\Doctrine\Mapper\MetaInformationFactory $informationFactory,
+        string $name = null)
+    {
+        parent::__construct($name);
+        $this->objectManager = $objectManager;
+        $this->knownNamespaceAliases = $knownNamespaceAliases;
+        $this->informationFactory = $informationFactory;
+    }
+
     /**
      * {@inheritdoc}
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $namespaces = $this->getContainer()->get('solr.doctrine.classnameresolver.known_entity_namespaces');
-        $metaInformationFactory = $this->getContainer()->get('solr.meta.information.factory');
+        $namespaces = $this->knownNamespaceAliases;
+        $metaInformationFactory = $this->informationFactory;
 
         foreach ($namespaces->getEntityClassnames() as $classname) {
             try {

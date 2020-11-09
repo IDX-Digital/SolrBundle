@@ -2,21 +2,24 @@
 
 namespace FS\SolrBundle\Doctrine\Hydration;
 
+use Doctrine\Persistence\ObjectManager;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 class DoctrineHydratorFactory
 {
     /**
-     * @var ContainerInterface
+     * @var DoctrineValueHydrator
      */
-    private $container;
-
+    private $hydrator;
     /**
-     * @param ContainerInterface $container
+     * @var ObjectManager
      */
-    public function __construct(ContainerInterface $container)
+    private $objectManager;
+
+    public function __construct(\FS\SolrBundle\Doctrine\Hydration\DoctrineValueHydrator $hydrator, ObjectManager $objectManager)
     {
-        $this->container = $container;
+        $this->hydrator = $hydrator;
+        $this->objectManager = $objectManager;
     }
 
     /**
@@ -24,15 +27,11 @@ class DoctrineHydratorFactory
      */
     public function factory()
     {
-        $valueHydrator = $this->container->get('solr.doctrine.hydration.doctrine_value_hydrator');
+        $valueHydrator = $this->hydrator;
 
         $hydrator = new DoctrineHydrator($valueHydrator);
-        if ($this->container->has('doctrine')) {
-            $hydrator->setOrmManager($this->container->get('doctrine'));
-        }
-
-        if ($this->container->has('doctrine_mongodb')) {
-            $hydrator->setOdmManager($this->container->get('doctrine_mongodb'));
+        if ($this->objectManager) {
+            $hydrator->setOrmManager($this->objectManager);
         }
 
         return $hydrator;

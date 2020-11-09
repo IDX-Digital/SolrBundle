@@ -3,7 +3,7 @@ namespace FS\SolrBundle\Event;
 
 use FS\SolrBundle\Doctrine\Mapper\MetaInformationInterface;
 use Solarium\Client;
-use Symfony\Component\EventDispatcher\Event as BaseEvent;
+use Symfony\Contracts\EventDispatcher\Event as BaseEvent;
 
 class Event extends BaseEvent
 {

@@ -15,6 +15,11 @@ use Symfony\Component\Console\Output\OutputInterface;
 class ClearIndexCommand extends Command
 {
     /**
+     * @var \FS\SolrBundle\Solr
+     */
+    private $solr;
+
+    /**
      * {@inheritdoc}
      */
     protected function configure()
@@ -24,12 +29,18 @@ class ClearIndexCommand extends Command
             ->setDescription('Clear the whole index');
     }
 
+    public function __construct(string $name = null, \FS\SolrBundle\Solr $solr)
+    {
+        parent::__construct($name);
+        $this->solr = $solr;
+    }
+
     /**
      * {@inheritdoc}
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $solr = $this->getContainer()->get('solr.client');
+        $solr = $this->solr;
 
         try {
             $solr->clearIndex();

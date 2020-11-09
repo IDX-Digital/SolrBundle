@@ -2,9 +2,9 @@
 
 namespace FS\SolrBundle\Command;
 
-use Doctrine\Common\Persistence\ObjectManager;
 use Doctrine\ODM\MongoDB\DocumentRepository;
 use Doctrine\ORM\EntityRepository;
+use Doctrine\Persistence\ObjectManager;
 use FS\SolrBundle\Doctrine\Mapper\SolrMappingException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -19,6 +19,19 @@ use Symfony\Component\Console\Question\ConfirmationQuestion;
 class SynchronizeIndexCommand extends Command
 {
     /**
+     * @var ObjectManager
+     */
+    private $objectManager;
+    /**
+     * @var \FS\SolrBundle\Doctrine\ClassnameResolver\KnownNamespaceAliases
+     */
+    private $knownNamespaceAliases;
+    /**
+     * @var \FS\SolrBundle\Doctrine\Mapper\MetaInformationFactory
+     */
+    private $informationFactory;
+
+    /**
      * {@inheritdoc}
      */
     protected function configure()
@@ -30,6 +43,19 @@ class SynchronizeIndexCommand extends Command
             ->addOption('start-offset', null, InputOption::VALUE_OPTIONAL, 'Start with row', 0)
             ->setDescription('Index all entities');
     }
+
+    public function __construct(
+        ObjectManager $objectManager,
+        \FS\SolrBundle\Doctrine\ClassnameResolver\KnownNamespaceAliases $knownNamespaceAliases,
+        \FS\SolrBundle\Doctrine\Mapper\MetaInformationFactory $informationFactory,
+        string $name = null)
+    {
+        parent::__construct($name);
+        $this->objectManager = $objectManager;
+        $this->knownNamespaceAliases = $knownNamespaceAliases;
+        $this->informationFactory = $informationFactory;
+    }
+
 
     /**
      * {@inheritdoc}
@@ -118,12 +144,7 @@ class SynchronizeIndexCommand extends Command
      */
     private function getObjectManager($entityClassname)
     {
-        $objectManager = $this->getContainer()->get('doctrine')->getManagerForClass($entityClassname);
-        if ($objectManager) {
-            return $objectManager;
-        }
-
-        $objectManager = $this->getContainer()->get('doctrine_mongodb')->getManagerForClass($entityClassname);
+        $objectManager = $this->objectManager->getRepository($entityClassname);
         if ($objectManager) {
             return $objectManager;
         }
@@ -145,8 +166,8 @@ class SynchronizeIndexCommand extends Command
         }
 
         $entities = [];
-        $namespaces = $this->getContainer()->get('solr.doctrine.classnameresolver.known_entity_namespaces');
-        $metaInformationFactory = $this->getContainer()->get('solr.meta.information.factory');
+        $namespaces = $this->knownNamespaceAliases;
+        $metaInformationFactory = $this->informationFactory;
 
         foreach ($namespaces->getEntityClassnames() as $classname) {
             try {
@@ -179,7 +200,7 @@ class SynchronizeIndexCommand extends Command
         $objectManager = $this->getObjectManager($entity);
         $repository = $objectManager->getRepository($entity);
 
-        if ($repository instanceof DocumentRepository) {
+        if ($repository instanceof EntityRepository) {
             $totalSize = $repository->createQueryBuilder()
                 ->getQuery()
                 ->count();

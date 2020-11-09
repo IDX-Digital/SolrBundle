@@ -3,6 +3,7 @@
 namespace FS\SolrBundle\Query;
 
 use FS\SolrBundle\Query\Exception\UnknownFieldException;
+use Solarium\QueryType\Select\Query\Query;
 
 class SolrQuery extends AbstractQuery
 {
@@ -160,7 +161,7 @@ class SolrQuery extends AbstractQuery
      *
      * @return SolrQuery
      */
-    public function addField($field)
+    public function addField(string $field): Query
     {
         $entityFieldNames = array_flip($this->mappedFields);
         if (array_key_exists($field, $entityFieldNames)) {
@@ -173,7 +174,7 @@ class SolrQuery extends AbstractQuery
     /**
      * {@inheritdoc}
      */
-    public function addFilterQuery($filterQuery)
+    public function addFilterQuery($filterQuery): Query
     {
         if ($this->getFilterQuery('id')) {
             return $this;
@@ -185,7 +186,7 @@ class SolrQuery extends AbstractQuery
     /**
      * @return string
      */
-    public function getQuery()
+    public function getQuery(): ?string
     {
         $searchTerms = array_merge($this->searchTerms, $this->childQueries);
 

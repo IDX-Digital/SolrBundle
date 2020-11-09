@@ -309,7 +309,7 @@ class QueryBuilder implements QueryBuilderInterface
     /**
      * {@inheritdoc}
      */
-    public function getQuery()
+    public function getQuery(): ?string
     {
         $query = new SolrQuery();
         $query->setSolr($this->solr);
