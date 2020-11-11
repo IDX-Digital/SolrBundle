@@ -11,6 +11,7 @@ use FS\SolrBundle\Helper\DocumentHelper;
 use FS\SolrBundle\Query\QueryBuilder;
 use FS\SolrBundle\Query\QueryBuilderInterface;
 use FS\SolrBundle\Repository\RepositoryInterface;
+use Solarium\Core\Query\AbstractDocument;
 use Solarium\Plugin\BufferedAdd\BufferedAdd;
 use Solarium\QueryType\Update\Query\Document\Document;
 use Solarium\QueryType\Select\Query\Query as SolariumQuery;
@@ -23,7 +24,6 @@ use FS\SolrBundle\Query\AbstractQuery;
 use FS\SolrBundle\Query\SolrQuery;
 use FS\SolrBundle\Repository\Repository;
 use Solarium\Client;
-use Solarium\QueryType\Update\Query\Document\DocumentInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 /**
@@ -178,7 +178,7 @@ class Solr implements SolrInterface
         $metaInformation = $this->metaInformationFactory->loadInformation($entity);
 
         $event = new Event($this->solrClientCore, $metaInformation);
-        $this->eventManager->dispatch(Events::PRE_DELETE, $event);
+        $this->eventManager->dispatch($event, Events::PRE_DELETE);
 
         if ($document = $this->entityMapper->toDocument($metaInformation)) {
 
@@ -192,12 +192,12 @@ class Solr implements SolrInterface
                 $errorEvent = new ErrorEvent(null, $metaInformation, 'delete-document', $event);
                 $errorEvent->setException($e);
 
-                $this->eventManager->dispatch(Events::ERROR, $errorEvent);
+                $this->eventManager->dispatch($errorEvent, Events::ERROR);
 
                 throw new SolrException($e->getMessage(), $e->getCode(), $e);
             }
 
-            $this->eventManager->dispatch(Events::POST_DELETE, $event);
+            $this->eventManager->dispatch($event, Events::POST_DELETE);
         }
     }
 
@@ -217,13 +217,13 @@ class Solr implements SolrInterface
         }
 
         $event = new Event($this->solrClientCore, $metaInformation);
-        $this->eventManager->dispatch(Events::PRE_INSERT, $event);
+        $this->eventManager->dispatch($event, Events::PRE_INSERT);
 
         $doc = $this->toDocument($metaInformation);
 
         $this->addDocumentToIndex($doc, $metaInformation, $event);
 
-        $this->eventManager->dispatch(Events::POST_INSERT, $event);
+        $this->eventManager->dispatch($event, Events::POST_INSERT);
 
         return true;
     }
@@ -293,7 +293,7 @@ class Solr implements SolrInterface
             $errorEvent = new ErrorEvent(null, null, 'query solr');
             $errorEvent->setException($e);
 
-            $this->eventManager->dispatch(Events::ERROR, $errorEvent);
+            $this->eventManager->dispatch($errorEvent, Events::ERROR);
 
             throw new SolrException($e->getMessage(), $e->getCode(), $e);
         }
@@ -316,7 +316,7 @@ class Solr implements SolrInterface
      */
     public function clearIndex()
     {
-        $this->eventManager->dispatch(Events::PRE_CLEAR_INDEX, new Event($this->solrClientCore));
+        $this->eventManager->dispatch(new Event($this->solrClientCore), Events::PRE_CLEAR_INDEX);
 
         try {
             $client = new SolariumMulticoreClient($this->solrClientCore);
@@ -325,12 +325,12 @@ class Solr implements SolrInterface
             $errorEvent = new ErrorEvent(null, null, 'clear-index');
             $errorEvent->setException($e);
 
-            $this->eventManager->dispatch(Events::ERROR, $errorEvent);
+            $this->eventManager->dispatch($errorEvent, Events::ERROR);
 
             throw new SolrException($e->getMessage(), $e->getCode(), $e);
         }
 
-        $this->eventManager->dispatch(Events::POST_CLEAR_INDEX, new Event($this->solrClientCore));
+        $this->eventManager->dispatch(new Event($this->solrClientCore), Events::POST_CLEAR_INDEX);
     }
 
     /**
@@ -341,6 +341,7 @@ class Solr implements SolrInterface
         /** @var BufferedAdd $buffer */
         $buffer = $this->solrClientCore->getPlugin('bufferedadd');
         $buffer->setBufferSize(500);
+        $buffer->setOptions(['timeout' => 5]);
 
         $allDocuments = array();
         foreach ($entities as $entity) {
@@ -360,8 +361,12 @@ class Solr implements SolrInterface
 
             if ($core == '') {
                 $core = null;
+            } else {
+                $buffer->setEndpoint($core);
             }
-            $buffer->setEndpoint($core);
+            if ($buffer->getOverwrite() === null) {
+                $buffer->setOverwrite(false);
+            }
 
             $buffer->commit();
         }
@@ -379,13 +384,13 @@ class Solr implements SolrInterface
         }
 
         $event = new Event($this->solrClientCore, $metaInformations);
-        $this->eventManager->dispatch(Events::PRE_UPDATE, $event);
+        $this->eventManager->dispatch($event, Events::PRE_UPDATE);
 
         $doc = $this->toDocument($metaInformations);
 
         $this->addDocumentToIndex($doc, $metaInformations, $event);
 
-        $this->eventManager->dispatch(Events::POST_UPDATE, $event);
+        $this->eventManager->dispatch($event, Events::POST_UPDATE);
 
         return true;
     }
@@ -395,7 +400,7 @@ class Solr implements SolrInterface
      *
      * @return DocumentInterface
      */
-    private function toDocument(MetaInformationInterface $metaInformation): DocumentInterface
+    private function toDocument(MetaInformationInterface $metaInformation): AbstractDocument
     {
         $doc = $this->entityMapper->toDocument($metaInformation);
 
@@ -421,7 +426,7 @@ class Solr implements SolrInterface
             $errorEvent = new ErrorEvent(null, $metaInformation, json_encode($this->solrClientCore->getOptions()), $event);
             $errorEvent->setException($e);
 
-            $this->eventManager->dispatch(Events::ERROR, $errorEvent);
+            $this->eventManager->dispatch($errorEvent, Events::ERROR);
 
             throw new SolrException($e->getMessage(), $e->getCode(), $e);
         }

@@ -8,6 +8,7 @@ Introduction
 ------------
 
 This Bundle provides a simple API to index and query a Solr Index. 
+This has been modified to work with Symfony 5.0
 
 ## Installation
 

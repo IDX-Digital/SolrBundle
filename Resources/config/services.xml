@@ -69,7 +69,8 @@
         </service>
 
         <service class="FS\SolrBundle\Doctrine\Hydration\DoctrineHydratorFactory" id="fs_solr.doctrine_hydration.doctrine_hydrator_factory">
-            <argument id="service_container" type="service"/>
+            <argument id="solr.doctrine.hydration.doctrine_value_hydrator" type="service"/>
+            <argument id="doctrine.orm.default_entity_manager" type="service"/>
         </service>
 
         <service id="solr.doctrine.hydration.value_hydrator" class="FS\SolrBundle\Doctrine\Hydration\ValueHydrator">
@@ -90,14 +91,22 @@
         </service>
 
         <service id="solr.command.clear_index_command" class="FS\SolrBundle\Command\ClearIndexCommand">
+            <argument id="FS\SolrBundle\SolrInterface" type="service" />
             <tag name="console.command"/>
         </service>
 
         <service id="solr.command.show_schema_command" class="FS\SolrBundle\Command\ShowSchemaCommand">
+            <argument id="doctrine.orm.default_entity_manager" type="service"/>
+            <argument id="solr.doctrine.classnameresolver.known_entity_namespaces" type="service"/>
+            <argument id="solr.meta.information.factory" type="service"/>
             <tag name="console.command"/>
         </service>
 
         <service id="solr.command.synchronize_index_command" class="FS\SolrBundle\Command\SynchronizeIndexCommand">
+            <argument id="doctrine.orm.default_entity_manager" type="service"/>
+            <argument id="solr.doctrine.classnameresolver.known_entity_namespaces" type="service"/>
+            <argument id="solr.meta.information.factory" type="service"/>
+            <argument id="solr.client" type="service"/>
             <tag name="console.command"/>
         </service>
     </services>

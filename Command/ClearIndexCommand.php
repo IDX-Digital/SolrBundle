@@ -29,7 +29,7 @@ class ClearIndexCommand extends Command
             ->setDescription('Clear the whole index');
     }
 
-    public function __construct(string $name = null, \FS\SolrBundle\Solr $solr)
+    public function __construct(\FS\SolrBundle\Solr $solr, string $name = null)
     {
         parent::__construct($name);
         $this->solr = $solr;
@@ -49,5 +49,6 @@ class ClearIndexCommand extends Command
         }
 
         $output->writeln('<info>Index successful cleared.</info>');
+        return 0;
     }
 }

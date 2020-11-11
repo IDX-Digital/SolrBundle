@@ -6,6 +6,8 @@ use Doctrine\ODM\MongoDB\DocumentRepository;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\Persistence\ObjectManager;
 use FS\SolrBundle\Doctrine\Mapper\SolrMappingException;
+use FS\SolrBundle\Solr;
+use Solarium\Client;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -31,6 +33,8 @@ class SynchronizeIndexCommand extends Command
      */
     private $informationFactory;
 
+    private $solrClient;
+
     /**
      * {@inheritdoc}
      */
@@ -48,12 +52,14 @@ class SynchronizeIndexCommand extends Command
         ObjectManager $objectManager,
         \FS\SolrBundle\Doctrine\ClassnameResolver\KnownNamespaceAliases $knownNamespaceAliases,
         \FS\SolrBundle\Doctrine\Mapper\MetaInformationFactory $informationFactory,
+        \FS\SolrBundle\Solr $solrClient,
         string $name = null)
     {
         parent::__construct($name);
         $this->objectManager = $objectManager;
         $this->knownNamespaceAliases = $knownNamespaceAliases;
         $this->informationFactory = $informationFactory;
+        $this->solrClient = $solrClient;
     }
 
 
@@ -70,7 +76,7 @@ class SynchronizeIndexCommand extends Command
 
         $startOffset = $input->getOption('start-offset');
         $batchSize = $input->getOption('flushsize');
-        $solr = $this->getContainer()->get('solr.client');
+        $solr = $this->solrClient;
 
         if ($startOffset > 0 && count($entities) > 1) {
             $output->writeln('<error>Wrong usage. Please use start-offset option together with the entity argument.</error>');
@@ -79,12 +85,11 @@ class SynchronizeIndexCommand extends Command
         }
 
         foreach ($entities as $entityClassname) {
-            $objectManager = $this->getObjectManager($entityClassname);
 
             $output->writeln(sprintf('Indexing: <info>%s</info>', $entityClassname));
 
             try {
-                $repository = $objectManager->getRepository($entityClassname);
+                $repository = $this->getEntityRepository($entityClassname);
             } catch (\Exception $e) {
                 $output->writeln(sprintf('<error>No repository found for "%s", check your input</error>', $entityClassname));
 
@@ -133,6 +138,7 @@ class SynchronizeIndexCommand extends Command
             $output->writeln('<info>Synchronization finished</info>');
             $output->writeln('');
         }
+        return 0;
     }
 
     /**
@@ -142,14 +148,19 @@ class SynchronizeIndexCommand extends Command
      *
      * @return ObjectManager
      */
-    private function getObjectManager($entityClassname)
+    private function getEntityRepository($entityClassname)
     {
-        $objectManager = $this->objectManager->getRepository($entityClassname);
-        if ($objectManager) {
-            return $objectManager;
+        $repository = $this->getObjectManager()->getRepository($entityClassname);
+        if ($repository) {
+            return $repository;
         }
 
         throw new \RuntimeException(sprintf('Class "%s" is not a managed entity', $entityClassname));
+    }
+
+    private function getObjectManager()
+    {
+        return $this->objectManager;
     }
 
     /**
@@ -197,30 +208,25 @@ class SynchronizeIndexCommand extends Command
      */
     private function getTotalNumberOfEntities($entity, $startOffset)
     {
-        $objectManager = $this->getObjectManager($entity);
-        $repository = $objectManager->getRepository($entity);
+        $repository = $this->getEntityRepository($entity);
 
-        if ($repository instanceof EntityRepository) {
-            $totalSize = $repository->createQueryBuilder()
-                ->getQuery()
-                ->count();
-        } else {
-            $dataStoreMetadata = $objectManager->getClassMetadata($entity);
 
-            $identifierFieldNames = $dataStoreMetadata->getIdentifierFieldNames();
+        $dataStoreMetadata = $this->getObjectManager()->getClassMetadata($entity);
 
-            if (!count($identifierFieldNames)) {
-                throw new \Exception(sprintf('No primary key found for entity %s', $entity));
-            }
+        $identifierFieldNames = $dataStoreMetadata->getIdentifierFieldNames();
 
-            $countableColumn = reset($identifierFieldNames);
-
-            /** @var EntityRepository $repository */
-            $totalSize = $repository->createQueryBuilder('size')
-                ->select(sprintf('count(size.%s)', $countableColumn))
-                ->getQuery()
-                ->getSingleScalarResult();
+        if (!count($identifierFieldNames)) {
+            throw new \Exception(sprintf('No primary key found for entity %s', $entity));
         }
+
+        $countableColumn = reset($identifierFieldNames);
+
+        /** @var EntityRepository $repository */
+        $totalSize = $repository->createQueryBuilder('size')
+            ->select(sprintf('count(size.%s)', $countableColumn))
+            ->getQuery()
+            ->getSingleScalarResult();
+
 
         return $totalSize - $startOffset;
     }

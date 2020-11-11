@@ -8,7 +8,7 @@ use FS\SolrBundle\Doctrine\Mapper\MetaInformationFactory;
 use FS\SolrBundle\Doctrine\Mapper\MetaInformationInterface;
 use FS\SolrBundle\Doctrine\Mapper\SolrMappingException;
 use Ramsey\Uuid\Uuid;
-use Solarium\QueryType\Update\Query\Document\Document;
+use Solarium\QueryType\Update\Query\Document;
 
 class DocumentFactory
 {
@@ -50,8 +50,9 @@ class DocumentFactory
 
         $document = new Document();
         $document->setKey(MetaInformationInterface::DOCUMENT_KEY_FIELD_NAME, $documentId);
-
-        $document->setBoost($metaInformation->getBoost());
+        if ($metaInformation->getBoost()) {
+            $document->setBoost($metaInformation->getBoost());
+        }
 
         foreach ($fields as $field) {
             if (!$field instanceof Field) {
